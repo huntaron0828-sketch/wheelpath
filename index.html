@@ -563,6 +563,8 @@ body{font-feature-settings:"kern";font-kerning:normal}
 .wp-place-quick button{font-size:12px;padding:8px 11px;border-radius:99px;background:white;color:#19545e;border:1px solid #c1dadd;min-height:36px}
 .wp-place-message{border-radius:10px;background:#f1f7f8;padding:10px 12px;color:#285064;font-size:12px;line-height:1.6;margin:0}
 .wp-place-message.error{background:#fff0e5;color:#9d4b17}
+.wp-place-group{margin:2px 2px 0;font-size:12px;font-weight:800;color:#56707a}
+.wp-place-cats{margin-top:10px}
 .wp-place-credit{font-size:11px;color:#7a8c96;margin:0;line-height:1.5}
 .wp-map-launch{margin-top:8px;display:flex;gap:8px}
 .wp-map-launch button{min-height:49px;border-radius:12px;background:#0d867a;color:#fff;border:0;font-size:15px;font-weight:800;padding:10px 14px;flex:1}
@@ -634,7 +636,7 @@ body{font-feature-settings:"kern";font-kerning:normal}
  </div>
  <div class="wp-place-quick" id="wp-place-quick" aria-label="빠른 장소 선택"><span>자주 찾는 장소</span></div>
  <p class="wp-place-message" id="wp-place-message" role="status">1km 범위의 장소를 고르세요. 앱에 등록된 역·동은 인터넷 없이도 검색돼요.</p>
- <p class="wp-place-credit">장소 온라인 검색: <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon / OpenStreetMap</a> · 인터넷 필요 · 외부 서비스 사정에 따라 일부 검색이 안 될 수 있어요.</p>
+ <p class="wp-place-credit">장소 검색: 카카오 장소·주소 검색 · 1km 구역 안 장소만 보여요 · 두 글자 이상 입력하면 자동으로 찾아요. 검색어는 카카오로 전송되니 집 주소 같은 개인정보는 입력하지 마세요.</p>
 </div></section><section class="wp-card wp-chair"><div class="sectitle"><div class="wp-card-header"><span class="wp-step-number">2</span><div><h2>어떤 휠체어를 이용하시나요?</h2><p>종류를 선택하면 기본 이동 속도가 적용돼요.</p></div></div></div><div class="pillrow"><button class="pill active" id="manual-btn">♿ 수동 휠체어</button><button class="pill" id="power-btn">⚡ 전동 휠체어</button></div>
 <details class="easy-advanced" id="advanced-panel"><summary>⚙️ 더 자세한 설정 및 온라인 지도</summary><div class="advanced-inner"><div class="rowline" style="margin-top:16px"><label class="caption" for="speed">평균 이동 속도</label><span class="speedvalue" id="speed-label">3.0 km/h</span></div><input class="slider" id="speed" max="7" min="1" step="0.5" type="range" value="3"/><div class="scale"><span>느리게 1</span><span>빠르게 7 km/h</span></div>
 <label class="caption" for="mode" style="margin-top:18px">경로 우선순위</label><select class="select" id="mode"><option value="shortest">거리 최단</option><option value="caution">건물내 구간 최소화 (가중치 적용)</option><option value="outdoor">건물내 구간 완전 제외</option></select><p class="hint">‘건물내’ 표시는 실내 시설·연결 구간 분류값일 뿐 계단 또는 통행 불가를 뜻하지 않습니다.</p>
@@ -2077,72 +2079,117 @@ for(const id of ['compare-fast','compare-access'])by(id).addEventListener('click
   updateNotice(`${which==='from'?'출발지':'목적지'}를 「${title}」(으)로 설정했어요. 두 장소를 정했다면 ‘내 조건으로 길 확인하기’를 눌러주세요.`);
   return true;
  }
+ const KCAT={SW8:'🚇',HP8:'🏥',PM9:'💊',PO3:'🏛️',BK9:'🏦',CS2:'🏪',CE7:'☕',FD6:'🍽️',MT1:'🛒',SC4:'🏫',AC5:'📚',PK6:'🅿️',OL7:'⛽',CT1:'🎭',AT4:'📸',AD5:'🏨',PS3:'🧸',AG2:'🏢'};
+ const RECENT_KEY='wheelpath_recent_places_v1';
+ function loadRecent(){try{const v=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');return Array.isArray(v)?v.filter(p=>p&&inBox(p.lon,p.lat)).slice(0,5):[]}catch{return[]}}
+ function addRecent(p){try{const name=placeName(p);const list=loadRecent().filter(x=>x.name!==name);list.unshift({name,lon:p.lon,lat:p.lat,node:p.node,detail:p.detail,source:'recent',icon:p.icon||(p.source==='local'?'🚇':'')});localStorage.setItem(RECENT_KEY,JSON.stringify(list.slice(0,5)))}catch{}}
+ function otherPoint(which){const n=NODE.get(state[which==='from'?'to':'from']);return n&&selected[which==='from'?'to':'from']?n:null}
+ function distText(p,which){const n=otherPoint(which);if(!n)return '';const cos=Math.cos(p.lat*Math.PI/180),m=Math.hypot((p.lon-n.lon)*111320*cos,(p.lat-n.lat)*111320);return `${which==='from'?'목적지':'출발지'}에서 직선 ${m<1000?Math.round(m/10)*10+'m':(m/1000).toFixed(1)+'km'}`}
  function createOption(p,which){
   const button=document.createElement('button');button.type='button';button.className='wp-place-option';
-  const emoji=document.createElement('span');emoji.className='wp-opt-icon';emoji.textContent=p.source==='local'?'🚇':p.source==='area'?'📍':'🔎';
+  const emoji=document.createElement('span');emoji.className='wp-opt-icon';emoji.textContent=p.icon||(p.source==='local'?'🚇':p.source==='area'?'📍':p.source==='recent'?'🕘':'🔎');
   const info=document.createElement('span');info.className='wp-opt-info';
   const label=document.createElement('strong');label.textContent=placeName(p);
-  const detail=document.createElement('small');detail.textContent=p.detail||'지도 데이터에 등록된 장소';
-  info.append(label,detail);button.append(emoji,info);button.addEventListener('click',()=>selectedPlace(which,p));return button;
+  const detail=document.createElement('small');detail.textContent=[p.detail||'지도 데이터에 등록된 장소',distText(p,which)].filter(Boolean).join(' · ');
+  info.append(label,detail);button.append(emoji,info);
+  button.addEventListener('click',()=>{if(selectedPlace(which,p))addRecent(p)});return button;
  }
- function showResults(which,places,emptyText){
+ function showResults(which,places,emptyText,title){
   const dest=$p('wp-place-'+which+'-options');dest.replaceChildren();
-  if(!places.length){const p=document.createElement('p');p.className='wp-place-empty';p.textContent=emptyText;dest.append(p);return;}
-  for(const place of places.slice(0,7))dest.append(createOption(place,which));
+  if(!places.length){if(emptyText){const p=document.createElement('p');p.className='wp-place-empty';p.textContent=emptyText;dest.append(p)}return;}
+  if(title){const h=document.createElement('p');h.className='wp-place-group';h.textContent=title;dest.append(h)}
+  for(const place of places.slice(0,10))dest.append(createOption(place,which));
  }
  function localMatch(q){
   const z=q.replace(/\s/g,'').toLowerCase();
-  return localPlaces.filter(p=>p.name.replace(/\s/g,'').toLowerCase().includes(z)).slice(0,6);
+  return localPlaces.filter(p=>p.name.replace(/\s/g,'').toLowerCase().includes(z)).slice(0,4);
  }
- async function doSearch(which){
+ function dedupe(list){const m=new Map();for(const p of list){const key=placeName(p).replace(/\s/g,'')+':'+Math.round(p.lon*5000)+':'+Math.round(p.lat*5000);if(!m.has(key))m.set(key,p)}return [...m.values()]}
+ // ---- 카카오 장소·주소 검색 (1km 구역 안으로 제한) ----
+ const kakaoCache=new Map();
+ function fromKakaoPlace(d){const cat=(d.category_name||'').split('>').map(s=>s.trim()).filter(Boolean).pop()||d.category_group_name||'';return{name:d.place_name,lon:+d.x,lat:+d.y,detail:[cat,d.road_address_name||d.address_name].filter(Boolean).join(' · '),icon:KCAT[d.category_group_code]||'📌',source:'kakao'}}
+ function fromKakaoAddress(d){const road=d.road_address?.address_name,jibun=d.address?.address_name||d.address_name;return{name:road||jibun,lon:+d.x,lat:+d.y,detail:road&&jibun&&road!==jibun?'지번 '+jibun:'주소',icon:'🏠',source:'kakao'}}
+ function kakaoCall(kind,arg,origin){
+  const key=[kind,arg,origin?origin.lon.toFixed(5)+','+origin.lat.toFixed(5):''].join('|');
+  if(kakaoCache.has(key))return Promise.resolve(kakaoCache.get(key));
+  if(location.protocol==='file:'||typeof window.wpLoadKakao!=='function')return Promise.reject(Error('카카오 장소 검색은 등록된 주소(GitHub Pages)에서 열었을 때만 쓸 수 있어요.'));
+  return window.wpLoadKakao().then(()=>new Promise((resolve,reject)=>{
+   const S=kakao.maps.services;
+   if(!S)return reject(Error('카카오 검색 라이브러리를 불러오지 못했어요.'));
+   const finish=map=>(data,status)=>{
+    if(status===S.Status.ERROR)return reject(Error('카카오 장소 검색에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+    const list=(status===S.Status.OK?data:[]).map(map).filter(p=>Number.isFinite(p.lon)&&inBox(p.lon,p.lat));
+    kakaoCache.set(key,list);resolve(list);
+   };
+   const o=origin||{lon:center[0],lat:center[1]};
+   const opt={bounds:new kakao.maps.LatLngBounds(new kakao.maps.LatLng(bbox[1],bbox[0]),new kakao.maps.LatLng(bbox[3],bbox[2])),x:o.lon,y:o.lat,size:15};
+   if(kind==='keyword')new S.Places().keywordSearch(arg,finish(fromKakaoPlace),{...opt,sort:S.SortBy.ACCURACY});
+   else if(kind==='category')new S.Places().categorySearch(arg,finish(fromKakaoPlace),{...opt,sort:S.SortBy.DISTANCE});
+   else new S.Geocoder().addressSearch(arg,finish(fromKakaoAddress),{size:10});
+  }));
+ }
+ function showStart(which){
+  const recent=loadRecent(),stations=localPlaces.filter(p=>p.source==='local');
+  showResults(which,dedupe([...recent,...stations]),'장소를 입력해 주세요.',recent.length?'최근 선택한 장소 · 등록된 역':'');
+ }
+ async function doSearch(which,auto=false){
   const input=$p('wp-place-'+which),q=input.value.trim();
-  if(!q){showResults(which,localPlaces.filter(p=>p.source==='local'),'장소를 입력해 주세요.');return;}
+  if(!q){showStart(which);return;}
   if(q.length>70){updateNotice('검색어는 70자 이내로 입력해 주세요.',true);return;}
   const current=localMatch(q);
-  showResults(which,current,'온라인 장소를 검색하는 중…');
-  const button=$p('wp-place-'+which+'-find');button.disabled=true;
+  const button=$p('wp-place-'+which+'-find');
   const token=Symbol();queries[which]=token;
+  if(!auto){showResults(which,current,'카카오에서 장소를 찾는 중…');button.disabled=true;}
   try{
-   if(!searchCache.has(q.toLowerCase())){
-    const passed=Date.now()-lastSearchAt;
-    if(passed<1100)await new Promise(r=>setTimeout(r,1100-passed));
-    lastSearchAt=Date.now();
-    const params=new URLSearchParams({q,lang:'ko',limit:'8',bbox:bbox.join(','),lat:String(center[1]),lon:String(center[0])});
-    const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6500);
-    try{
-     const resp=await fetch('https://photon.komoot.io/api/?'+params,{signal:ctrl.signal,mode:'cors'});
-     if(!resp.ok)throw Error('검색 서비스 응답 오류 '+resp.status);
-     const geo=await resp.json();
-     const remote=(geo.features||[]).filter(f=>f.geometry?.type==='Point').map(f=>{
-      const pr=f.properties||{},[lon,lat]=f.geometry.coordinates;
-      return {name:pr.name||[pr.street,pr.housenumber].filter(Boolean).join(' ')||pr.city||pr.district||'장소',lon,lat,detail:[pr.street,pr.housenumber,pr.district,pr.city,pr.county].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ')||'OpenStreetMap 장소',source:'online'};
-     }).filter(p=>inBox(p.lon,p.lat));
-     searchCache.set(q.toLowerCase(),remote);
-    }finally{clearTimeout(timer)}
-   }
+   let remote=await kakaoCall('keyword',q);
+   if(!remote.length&&/\d/.test(q))remote=await kakaoCall('address',q);
    if(queries[which]!==token)return;
-   const all=[...current,...searchCache.get(q.toLowerCase())];
-   const dedupe=new Map();for(const p of all){const key=p.name+':'+Math.round(p.lon*10000)+':'+Math.round(p.lat*10000);if(!dedupe.has(key))dedupe.set(key,p);}
-   showResults(which,[...dedupe.values()],'해당 이름의 장소가 1km 구역 안에 없어요. 다른 검색어를 입력해 주세요.');
-   updateNotice(`${q} 검색 결과를 골라주세요. 위치를 선택하기 전에는 경로에 반영되지 않아요.`);
+   showResults(which,dedupe([...current,...remote]),`1km 구역 안에서 「${q}」을(를) 찾지 못했어요. 가게·건물 이름이나 도로명 주소(예: 마포대로 33)로 검색해 보세요.`);
+   if(!auto)updateNotice(`「${q}」 검색 결과에서 장소를 골라 주세요. 고르기 전에는 경로에 반영되지 않아요.`);
   }catch(err){
    if(queries[which]!==token)return;
-   showResults(which,current,'온라인 검색에 연결하지 못했어요. 공덕역·마포역 또는 지역 이름을 검색할 수 있어요.');
-   updateNotice('온라인 장소 검색 연결에 실패했어요. 인터넷 연결을 확인하거나, 등록된 역·지역 이름을 이용해 주세요.',true);
+   showResults(which,current,auto?'':err.message);
+   if(!auto)updateNotice(err.message+' 등록된 역·동 이름은 계속 검색할 수 있어요.',true);
   }finally{if(queries[which]===token)button.disabled=false;}
  }
+ const typingTimers={};
  for(const kind of ['from','to']){
   const input=$p('wp-place-'+kind);
   input.addEventListener('input',()=>{
    selected[kind]=false;
-   $p('wp-place-'+kind+'-confirm').textContent='⌕ 검색을 누르고 결과에서 장소를 선택해 주세요.';
+   $p('wp-place-'+kind+'-confirm').textContent='⌕ 아래 결과에서 장소를 선택해 주세요.';
    $p('wp-place-'+kind+'-confirm').classList.add('wp-awaiting');
-   $p('wp-place-'+kind+'-options').replaceChildren();
-   const local=input.value.trim()?localMatch(input.value.trim()):localPlaces.filter(p=>p.source==='local');
-   if(local.length)showResults(kind,local,''); // local-only suggestions; no external requests while typing
+   const q=input.value.trim();
+   clearTimeout(typingTimers[kind]);
+   if(!q){showStart(kind);return;}
+   showResults(kind,localMatch(q),'');
+   if(q.length>=2)typingTimers[kind]=setTimeout(()=>doSearch(kind,true),350);
   });
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSearch(kind)}});
-  $p('wp-place-'+kind+'-find').addEventListener('click',()=>doSearch(kind));
+  input.addEventListener('focus',()=>{activeField=kind;updateCatTitle();if(!input.value.trim())showStart(kind);});
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(typingTimers[kind]);doSearch(kind)}});
+  $p('wp-place-'+kind+'-find').addEventListener('click',()=>{clearTimeout(typingTimers[kind]);doSearch(kind)});
+ }
+ // ---- 주변 시설 찾기 (카카오 카테고리 검색) ----
+ let activeField='to';
+ const cats=document.createElement('div');cats.className='wp-place-quick wp-place-cats';cats.setAttribute('aria-label','주변 시설 찾기');
+ const catTitle=document.createElement('span');cats.append(catTitle);
+ function updateCatTitle(){catTitle.textContent=`주변 시설 찾기 → ${activeField==='from'?'출발지':'목적지'} 칸에 결과가 나와요`}
+ updateCatTitle();
+ for(const [code,icon,name] of [['SW8','🚇','지하철역'],['HP8','🏥','병원'],['PM9','💊','약국'],['PO3','🏛️','공공기관'],['BK9','🏦','은행'],['CS2','🏪','편의점'],['CE7','☕','카페']]){
+  const label=icon+' '+name;
+  const b=document.createElement('button');b.type='button';b.textContent=label;
+  b.addEventListener('click',async()=>{
+   const which=activeField,token=Symbol();queries[which]=token;
+   const origin=otherPoint(which);
+   showResults(which,[],`${label} 찾는 중…`);
+   try{
+    const list=await kakaoCall('category',code,origin);
+    if(queries[which]!==token)return;
+    showResults(which,list,`1km 구역 안에서 ${name}을(를) 찾지 못했어요.`,`${label} · 1km 구역 안 · ${origin?(which==='from'?'목적지':'출발지')+'에서 가까운 순':'가까운 순'}`);
+    $p('wp-place-'+which+'-options').scrollIntoView({block:'nearest',behavior:'smooth'});
+   }catch(err){if(queries[which]===token){showResults(which,[],err.message);updateNotice(err.message,true)}}
+  });
+  cats.append(b);
  }
  // Quick picks default to departure and destination through explicit buttons, still no map.
  const quick=$p('wp-place-quick');
@@ -2152,6 +2199,7 @@ for(const id of ['compare-fast','compare-access'])by(id).addEventListener('click
    b.addEventListener('click',()=>selectedPlace(kind,p));quick.append(b);
   }
  }
+ quick.after(cats);
  // Existing swap/reset controls keep the newly visible text fields in sync.
  function syncState(){
   for(const kind of ['from','to']){
@@ -2343,7 +2391,7 @@ for(const id of ['compare-fast','compare-access'])by(id).addEventListener('click
   if(kLoading)return kLoading;
   kLoading=new Promise((resolve,reject)=>{
    const s=document.createElement('script');
-   s.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
+   s.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services&autoload=false`;
    const timer=setTimeout(()=>reject(Error('카카오맵이 응답하지 않아요. 카카오 디벨로퍼스에서 카카오맵 사용 설정(ON)과 JavaScript SDK 도메인 등록을 확인해 주세요.')),12000);
    s.onload=()=>{
     if(!window.kakao?.maps?.load){clearTimeout(timer);reject(Error('카카오맵 키 또는 등록된 사이트 도메인을 확인해 주세요.'));return}
@@ -2354,6 +2402,7 @@ for(const id of ['compare-fast','compare-access'])by(id).addEventListener('click
   }).catch(err=>{kLoading=null;throw err});
   return kLoading;
  }
+ window.wpLoadKakao=loadSdk;
  function createMap(){
   kmap=new kakao.maps.Map(kdiv,{center:LL((B[1]+B[3])/2,(B[0]+B[2])/2),level:5,mapTypeId:kakao.maps.MapTypeId.ROADMAP});
   const E=0.1;
