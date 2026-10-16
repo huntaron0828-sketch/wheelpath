@@ -583,6 +583,22 @@ body{font-feature-settings:"kern";font-kerning:normal}
  body.wp-mobile-flow:not(.wp-map-open) #wp-mobile-map-slot #map{visibility:hidden!important;pointer-events:none!important}
 }
 </style>
+<style id="wp-1km-only-style">
+/* 1km 구역 밖은 비워 둡니다: 바깥은 단색, 안쪽만 밝은 지도 */
+#map.map-wrap{background:#dfe5e8!important;background-image:none!important}
+#map #vectors{background:#f8fbfb}
+#map .mapbound{fill:none!important;stroke:#5f9ea0!important;stroke-dasharray:none!important;stroke-width:2!important;opacity:.9!important}
+</style>
+<style id="wp-kakao-style">
+.kakao-map{position:absolute;inset:0;z-index:0;display:none;background:#dfe5e8}
+#map.kakao-on .kakao-map{display:block}
+#map.kakao-on #vectors{background:transparent!important}
+#map.kakao-on .tiles,#map.kakao-on #street-outline-layer,#map.kakao-on #street-fill-layer,#map.kakao-on #district-layer{display:none!important}
+#map.kakao-on .road,#map.kakao-on .safety-cross,#map.kakao-on .safety-route-cross{pointer-events:none!important}
+#map.kakao-on .road{opacity:.8}
+#map.kakao-on{cursor:default}
+#map.kakao-zooming #vectors{visibility:hidden}
+</style>
 </head>
 <body class="wp-map-idle">
 <header class="topbar"><div class="brand"><div aria-hidden="true" class="brandicon">♿</div><div><div class="brandname">WheelPath <span style="font-size:14px;color:#5de0c2">MAPO</span></div><div class="brandsub">휠체어 이동 가능성 시뮬레이터</div></div></div><div class="topright"><span class="chip">서울시 공공데이터 기반</span><span class="chip" id="top-count">1km × 1km</span></div></header>
@@ -622,7 +638,7 @@ body{font-feature-settings:"kern";font-kerning:normal}
 </div></section><section class="wp-card wp-chair"><div class="sectitle"><div class="wp-card-header"><span class="wp-step-number">2</span><div><h2>어떤 휠체어를 이용하시나요?</h2><p>종류를 선택하면 기본 이동 속도가 적용돼요.</p></div></div></div><div class="pillrow"><button class="pill active" id="manual-btn">♿ 수동 휠체어</button><button class="pill" id="power-btn">⚡ 전동 휠체어</button></div>
 <details class="easy-advanced" id="advanced-panel"><summary>⚙️ 더 자세한 설정 및 온라인 지도</summary><div class="advanced-inner"><div class="rowline" style="margin-top:16px"><label class="caption" for="speed">평균 이동 속도</label><span class="speedvalue" id="speed-label">3.0 km/h</span></div><input class="slider" id="speed" max="7" min="1" step="0.5" type="range" value="3"/><div class="scale"><span>느리게 1</span><span>빠르게 7 km/h</span></div>
 <label class="caption" for="mode" style="margin-top:18px">경로 우선순위</label><select class="select" id="mode"><option value="shortest">거리 최단</option><option value="caution">건물내 구간 최소화 (가중치 적용)</option><option value="outdoor">건물내 구간 완전 제외</option></select><p class="hint">‘건물내’ 표시는 실내 시설·연결 구간 분류값일 뿐 계단 또는 통행 불가를 뜻하지 않습니다.</p>
-<div class="api-panel" id="api-panel"><div class="api-panel-title">🗺️ 실제 지도 · OpenFreeMap</div><p class="hint" style="margin-top:7px">건물·도로명이 보이는 실제 지도에 서울시 보행로를 겹쳐 표시합니다. <b>계정·API 키·Node.js가 필요 없습니다.</b> 지도 배경에는 인터넷 연결이 필요합니다.</p><div class="api-row"><button class="btn primary" id="live-connect" type="button">↻ 실제 지도 연결</button><button class="btn secondary" id="offline-switch" type="button">보행로 지도만 보기</button></div><p class="api-message" id="live-connection-status" role="status">온라인 지도 자동 연결을 확인하는 중…</p><p class="hint" id="live-help" style="margin:3px 0 0;display:none">연결이 안 되나요? 먼저 <a href="https://tiles.openfreemap.org/styles/liberty" rel="noopener noreferrer" target="_blank">지도 서버 열기</a>를 눌러 접속되는지 확인하세요. HTML 파일을 더블클릭해 열었다면 웹사이트 주소(HTTPS)에서 실행하면 도움이 될 수 있습니다.</p><a class="api-guide-link" href="https://openfreemap.org/" rel="noopener noreferrer" target="_blank">↗ OpenFreeMap 소개</a></div>
+<div class="api-panel" id="api-panel"><div class="api-panel-title">🗺️ 실제 지도 · 카카오맵</div><p class="hint" style="margin-top:7px">카카오맵(2D) 위에 서울시 보행로를 겹쳐 표시합니다. 지도를 열면 자동으로 연결되며, 인터넷 연결과 등록된 주소(https://huntaron0828-sketch.github.io)가 필요합니다.</p><div class="api-row"><button class="btn primary" id="live-connect" type="button">↻ 카카오맵 연결</button><button class="btn secondary" id="offline-switch" type="button">보행로 지도만 보기</button></div><p class="api-message" id="live-connection-status" role="status">지도를 열면 카카오맵을 연결해요.</p><p class="hint" id="live-help" style="margin:3px 0 0;display:none">연결이 안 되면 카카오 디벨로퍼스 → 내 애플리케이션 → 플랫폼 → Web에 사이트 도메인이 등록됐는지 확인해 주세요. HTML 파일을 더블클릭해 열면 카카오맵이 표시되지 않아요.</p></div>
 <div class="rowline" style="margin-top:16px"><label class="caption" for="delay">실내 표시 링크당 추가 시간</label><span class="speedvalue" id="delay-label">20초</span></div><input class="slider" id="delay" max="120" min="0" step="10" type="range" value="20"/><div class="scale"><span>0초</span><span>120초</span></div></div><div aria-label="앱 글자 크기 설정" class="typography-panel" role="group"><div><div class="typography-label">글자 크기 · 선명한 표시</div><div class="typography-hint">작은 설명 글씨도 확대할 수 있어요</div></div><div class="typography-buttons"><button aria-pressed="true" id="type-standard" type="button">기본</button><button aria-pressed="false" id="type-large" type="button">크게</button><button aria-pressed="false" id="type-largest" type="button">더 크게</button></div></div></details></section><section aria-labelledby="access-title" class="wp-card access-panel" id="access-panel">
 <div class="access-head"><span class="access-kicker">내 이동 조건</span><h2 id="access-title">나에게 편한 길을 골라요</h2><p>어려운 길을 피하기 위한 개인별 설정이에요. 실제 정보가 없는 구간은 확인 필요로 표시해요.</p></div>
 <div aria-label="이동 조건 예시" class="wp-presets" role="group">
@@ -703,9 +719,9 @@ body{font-feature-settings:"kern";font-kerning:normal}
 </section>
 <div class="warning" style="margin-top:12px" role="note"><b>분석 범위는 공덕역·마포역 중심 약 1km × 1km예요.</b> 두 역 사이 중간 지점을 중심으로 동서·남북 각각 약 1km 안의 보행로만 포함됩니다. 지도를 확대하면 보행로를 터치해 장애물을 설치할 수 있어요. 서울시 자료의 보행로 연결 여부와 실제 휠체어 통행 가능 여부는 다릅니다.</div><section class="section"><div class="sectitle">현재 분석 범위 <small>서울시 CSV 추출</small></div><div class="stats"><div><b id="network-edges">–</b><span>연결 링크</span></div><div><b id="network-nodes">–</b><span>연결 노드</span></div><div><b id="network-indoors">–</b><span>실내 표시 링크</span></div></div><p class="smallnote">범위: 북위 37.53762–37.54660°, 동경 126.94299–126.95432°. 경계 안에 완전히 포함되는 보행 링크만 사용했습니다. 모든 구간의 초기 접근성 상태는 ‘미검증’입니다.</p></section>
 <section class="section"><div class="sectitle">내 조사 기록</div><div class="utility"><button class="btn small" id="export-btn">↓ 기록 내보내기</button><button class="btn small" id="import-btn">↑ 기록 불러오기</button><button class="btn small" id="clear-btn">초기화</button><input accept=".json,application/json" hidden="" id="import-file" type="file"/></div><p class="smallnote">기록은 현재 브라우저의 로컬 저장소에 보관됩니다. 다른 기기와 자동 동기화되지 않습니다.</p></section>
-<p class="smallnote">데이터 출처: 서울 열린데이터광장 · 서울시 자치구별 도보 네트워크 공간정보 (업로드된 CSV), 서울시 교통안전시설물 횡단보도·부착대 (업로드된 ZIP). 보행로는 서울시 공공데이터, 실제 지도 배경은 연결 시 OpenFreeMap·MapLibre입니다. 출발·도착 역 좌표는 역 중심 부근 참고 좌표이며 무장애 출입구 좌표가 아닙니다.</p>
+<p class="smallnote">데이터 출처: 서울 열린데이터광장 · 서울시 자치구별 도보 네트워크 공간정보 (업로드된 CSV), 서울시 교통안전시설물 횡단보도·부착대 (업로드된 ZIP). 보행로는 서울시 공공데이터, 실제 지도 배경은 연결 시 카카오맵입니다. 출발·도착 역 좌표는 역 중심 부근 참고 좌표이며 무장애 출입구 좌표가 아닙니다.</p>
 </details></aside>
-<section aria-label="공덕역과 마포역 주변 실제 보행로 네트워크 지도" class="map-wrap" id="map"><div aria-hidden="true" class="tiles" id="tiles"></div><div aria-label="OpenFreeMap 실제 지도" class="maplibre-canvas" id="maplibre-canvas"></div><svg aria-label="보행로 및 계산 경로" class="vector-layer" id="vectors"><g id="street-outline-layer"></g><g id="street-fill-layer"></g><g id="bounds-layer"></g><g id="district-layer"></g><g id="roads-layer"></g><g id="route-halo-layer"></g><g id="route-layer"></g><g id="markers-layer"></g></svg>
+<section aria-label="공덕역과 마포역 주변 실제 보행로 네트워크 지도" class="map-wrap" id="map"><div aria-hidden="true" class="tiles" id="tiles"></div><div aria-hidden="true" class="maplibre-canvas" id="maplibre-canvas"></div><svg aria-label="보행로 및 계산 경로" class="vector-layer" id="vectors"><g id="street-outline-layer"></g><g id="street-fill-layer"></g><g id="bounds-layer"></g><g id="district-layer"></g><g id="roads-layer"></g><g id="route-halo-layer"></g><g id="route-layer"></g><g id="markers-layer"></g></svg>
 <div aria-hidden="true" class="guide-map-indicator" id="guide-map-indicator"><span>현재 안내</span></div>
 <div class="map-source-tag" id="map-source-tag"><span class="source-dot"></span> 서울시 실제 보행로 기반 · 오프라인 지도</div>
 <div class="map-infobar"><div class="map-infotitle" id="map-infotitle">공덕역 ↔ 마포역 · 1km × 1km</div><div class="map-infosub" id="map-infosub">실제 서울시 보행 네트워크 · 미검증 구간 포함</div></div>
@@ -2201,6 +2217,191 @@ for(const id of ['compare-fast','compare-access'])by(id).addEventListener('click
  window.wpRoadsDirty=true;
  document.body.classList.add('wp-map-idle');
  updateNotice('장소를 검색해 출발지와 목적지를 선택하세요. 지도는 길찾기 결과를 볼 때만 불러옵니다.');
+})();
+</script>
+<script id="wp-kakao-script">
+/* 카카오맵(2D) 배경 + 1km × 1km 구역만 표시.
+   보행로·경로·횡단보도·가상 장애물은 기존 SVG 렌더러가 그대로 그리고,
+   카카오맵이 켜져 있으면 좌표 변환(screen / worldPointAtScreen)만 카카오 기준으로 바꿉니다.
+   카카오맵을 불러오지 못하면 기존 보행로 지도로 그대로 동작합니다. */
+(function(){
+ 'use strict';
+ const KAKAO_KEY='ee5a1635f12ec412afee4d662ddbaa07';
+ const KAKAO_HOST='https://huntaron0828-sketch.github.io';
+ const B=DATA.bounds, OUTSIDE='#dfe5e8', MARGIN=80;
+ const mapEl=$('map');
+ let kmap=null,kReady=false,kOn=false,kLoading=null,userOff=false,synced=null,maxLevel=14;
+ const K=()=>!!(kOn&&kReady&&kmap);
+ window.wpKakaoActive=K;
+
+ const kdiv=document.createElement('div');
+ kdiv.id='kakao-map';kdiv.className='kakao-map';kdiv.setAttribute('aria-label','카카오맵 배경 지도');
+ mapEl.insertBefore(kdiv,mapEl.firstChild);
+
+ // ---- 공통: 1km 구역 고정 ----
+ function clampAxis(c,lo,hi,half){return (hi-lo)<=2*half?(lo+hi)/2:Math.min(hi-half,Math.max(lo+half,c))}
+ function minZoomFor(w,h){let z=19;while(z>11.2){const a=project(B[0],B[1],z),b=project(B[2],B[3],z);if(Math.abs(b.x-a.x)<=w-MARGIN&&Math.abs(b.y-a.y)<=h-MARGIN)break;z-=0.05}return z}
+ function clampOffline(){
+  const r=mapEl.getBoundingClientRect();if(!r.width||!r.height)return;
+  state.zoom=Math.max(state.zoom,minZoomFor(r.width,r.height));
+  const z=state.zoom,a=project(B[0],B[3],z),b=project(B[2],B[1],z),c=project(state.centerLon,state.centerLat,z);
+  const ll=unproject(clampAxis(c.x,a.x,b.x,r.width/2),clampAxis(c.y,a.y,b.y,r.height/2),z);
+  state.centerLon=ll.lon;state.centerLat=ll.lat;
+ }
+ function clipSvg(){
+  const svg=$('vectors'),r=mapEl.getBoundingClientRect();if(!svg||!r.width)return;
+  const p1=screen(B[0],B[3]),p2=screen(B[2],B[1]);
+  const f=v=>Math.max(0,Math.round(v));
+  svg.style.clipPath=`inset(${f(p1.y)}px ${f(r.width-p2.x)}px ${f(r.height-p2.y)}px ${f(p1.x)}px)`;
+ }
+
+ // ---- 좌표 변환: 카카오맵이 켜져 있으면 카카오 투영을 사용 ----
+ const offScreen=screen,offWorld=worldPointAtScreen,offZoomTo=zoomTo,offFit=fitBounds,offTag=updateMapSourceTag;
+ const LL=(lat,lon)=>new kakao.maps.LatLng(lat,lon);
+ screen=function(lon,lat){if(K()){const p=kmap.getProjection().containerPointFromCoords(LL(lat,lon));return{x:p.x,y:p.y}}return offScreen(lon,lat)};
+ worldPointAtScreen=function(x,y){if(K()){const ll=kmap.getProjection().coordsFromContainerPoint(new kakao.maps.Point(x,y));return{lon:ll.getLng(),lat:ll.getLat()}}return offWorld(x,y)};
+ zoomTo=function(z,mx,my){
+  if(K()){if(mx!==undefined)return; // 마우스 휠은 카카오맵이 직접 처리
+   const next=Math.max(1,Math.min(maxLevel,kmap.getLevel()+(z>state.zoom?-1:1)));
+   if(next!==kmap.getLevel())kmap.setLevel(next,{animate:true});return}
+  return offZoomTo(z,mx,my);
+ };
+ fitBounds=function(){if(K()){kFit();return}return offFit()};
+ updateMapSourceTag=function(){
+  if(K()){$('map-source-tag').innerHTML='<span class="source-dot"></span> 카카오맵 · 서울시 보행로';$('map-cite').textContent='배경 © Kakao · 보행로 서울시 공공데이터';return}
+  return offTag();
+ };
+ // 전체 범위 버튼은 예전 함수에 직접 연결돼 있어 새로 연결
+ {const old=$('zoom-fit');if(old){const btn=old.cloneNode(true);old.replaceWith(btn);btn.addEventListener('click',()=>fitBounds())}}
+
+ // 카카오맵 위에서 시작한 끌기는 기존 SVG 지도 끌기에 넘기지 않음
+ mapEl.addEventListener('pointerdown',()=>{if(K())gesture=null});
+
+ function syncState(){
+  const c=kmap.getCenter(),lat=(B[1]+B[3])/2;
+  const a=screen(B[0],lat),b=screen(B[2],lat),m0=project(B[2],lat,0).x-project(B[0],lat,0).x;
+  state.centerLon=c.getLng();state.centerLat=c.getLat();
+  if(b.x>a.x)state.zoom=Math.log2((b.x-a.x)/m0);
+  synced={lon:state.centerLon,lat:state.centerLat,zoom:state.zoom};
+ }
+ // 다른 기능(횡단보도로 이동, 장애물 구간 확대 등)이 state를 바꾸면 카카오맵도 따라 이동
+ function applyIntent(){
+  if(!synced)return;
+  const moved=Math.abs(state.centerLon-synced.lon)>1e-7||Math.abs(state.centerLat-synced.lat)>1e-7,zoomed=Math.abs(state.zoom-synced.zoom)>0.05;
+  if(!moved&&!zoomed)return;
+  if(zoomed){const lv=Math.max(1,Math.min(maxLevel,Math.round(kmap.getLevel()-(state.zoom-synced.zoom))));if(lv!==kmap.getLevel())kmap.setLevel(lv,{animate:false})}
+  kmap.setCenter(LL(state.centerLat,state.centerLon));
+  clampKakao(false);
+ }
+ function clampKakao(smooth=true){
+  if(!K())return;
+  const w=kdiv.clientWidth,h=kdiv.clientHeight;if(!w||!h)return;
+  const a=screen(B[0],B[3]),b=screen(B[2],B[1]);
+  const tx=clampAxis(w/2,a.x,b.x,w/2),ty=clampAxis(h/2,a.y,b.y,h/2);
+  if(Math.abs(tx-w/2)>1||Math.abs(ty-h/2)>1){
+   const ll=kmap.getProjection().coordsFromContainerPoint(new kakao.maps.Point(tx,ty));
+   smooth?kmap.panTo(ll):kmap.setCenter(ll);
+  }
+ }
+ function kFit(){
+  if(!kmap)return;
+  kmap.relayout();
+  kmap.setMaxLevel(14);
+  kmap.setBounds(new kakao.maps.LatLngBounds(LL(B[1],B[0]),LL(B[3],B[2])),40,40,40,40);
+  maxLevel=kmap.getLevel();kmap.setMaxLevel(maxLevel);
+  synced=null;clampKakao(false);scheduleRender();
+ }
+
+ const prevRender=renderMap;
+ renderMap=function(){
+  if(!window.wpMapDemand)return prevRender.apply(this,arguments);
+  if(K()){applyIntent();syncState()}
+  else if(!(liveMap&&liveReady))clampOffline();
+  const out=prevRender.apply(this,arguments);
+  clipSvg();
+  return out;
+ };
+
+ function nearestEdge(x,y,limit){
+  let best=null;
+  for(const e of EDGES){let prev=null;
+   for(const p of e.points){const q=screen(p[0],p[1]);
+    if(prev){const dx=q.x-prev.x,dy=q.y-prev.y,L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((x-prev.x)*dx+(y-prev.y)*dy)/L)):0,d=Math.hypot(x-(prev.x+t*dx),y-(prev.y+t*dy));if(!best||d<best.d)best={e,d}}
+    prev=q}}
+  return best&&best.d<=limit?best.e:null;
+ }
+ function onKakaoClick(ev){
+  const ll=ev.latLng,lon=ll.getLng(),lat=ll.getLat();
+  if(!(lon>=B[0]&&lon<=B[2]&&lat>=B[1]&&lat<=B[3]))return;
+  if(state.pick){setPickedNode(lon,lat);return}
+  const p=kmap.getProjection().containerPointFromCoords(ll),e=nearestEdge(p.x,p.y,22);
+  if(e){state.selected=e.id;renderDetails();scheduleRender();showStatus(`선택 구간 #${e.id} · ${fmt(e.length,1)}m`)}
+ }
+
+ function loadSdk(){
+  if(window.kakao?.maps?.Map)return Promise.resolve();
+  if(kLoading)return kLoading;
+  kLoading=new Promise((resolve,reject)=>{
+   const s=document.createElement('script');
+   s.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
+   const timer=setTimeout(()=>reject(Error('카카오맵 응답이 늦어지고 있어요.')),12000);
+   s.onload=()=>{
+    if(!window.kakao?.maps?.load){clearTimeout(timer);reject(Error('카카오맵 키 또는 등록된 사이트 도메인을 확인해 주세요.'));return}
+    kakao.maps.load(()=>{clearTimeout(timer);resolve()});
+   };
+   s.onerror=()=>{clearTimeout(timer);reject(Error('카카오맵을 불러오지 못했어요. 인터넷 연결과 등록된 사이트 도메인을 확인해 주세요.'))};
+   document.head.append(s);
+  }).catch(err=>{kLoading=null;throw err});
+  return kLoading;
+ }
+ function createMap(){
+  kmap=new kakao.maps.Map(kdiv,{center:LL((B[1]+B[3])/2,(B[0]+B[2])/2),level:5,mapTypeId:kakao.maps.MapTypeId.ROADMAP});
+  const E=0.1;
+  new kakao.maps.Polygon({map:kmap,zIndex:1,strokeWeight:0,strokeOpacity:0,fillColor:OUTSIDE,fillOpacity:1,
+   path:[[LL(B[1]-E,B[0]-E),LL(B[3]+E,B[0]-E),LL(B[3]+E,B[2]+E),LL(B[1]-E,B[2]+E)],
+         [LL(B[1],B[0]),LL(B[1],B[2]),LL(B[3],B[2]),LL(B[3],B[0])]]});
+  const on=(name,fn)=>kakao.maps.event.addListener(kmap,name,fn);
+  on('center_changed',()=>scheduleRender());
+  on('bounds_changed',()=>scheduleRender());
+  on('zoom_start',()=>mapEl.classList.add('kakao-zooming'));
+  on('zoom_changed',()=>{mapEl.classList.remove('kakao-zooming');clampKakao();scheduleRender()});
+  on('dragend',()=>clampKakao());
+  on('idle',()=>{mapEl.classList.remove('kakao-zooming');scheduleRender()});
+  on('click',onKakaoClick);
+ }
+ async function activateKakao(){
+  if(location.protocol==='file:'){connectStatus(`카카오맵은 등록된 주소(${KAKAO_HOST})에서 열었을 때만 보여요. 지금은 보행로 지도로 표시해요.`,'error');return}
+  if(!window.wpMapDemand)return;
+  if(kmap&&kReady){kOn=true;mapEl.classList.add('kakao-on');kFit();updateMapSourceTag();return}
+  if(liveBusy)return;
+  liveBusy=true;connectStatus('카카오맵 불러오는 중…');
+  try{
+   await loadSdk();
+   if(!window.wpMapDemand)return;
+   mapEl.classList.add('kakao-on');
+   if(kdiv.clientWidth<50||kdiv.clientHeight<50)throw Error('지도 영역 크기를 확인할 수 없어요.');
+   createMap();kReady=true;kOn=true;
+   kFit();updateMapSourceTag();
+   connectStatus(`카카오맵 연결됨 · 보행로 ${fmt(EDGES.length)}개 표시`,'success');
+  }catch(err){
+   kOn=false;mapEl.classList.remove('kakao-on');
+   connectStatus('카카오맵 연결 실패: '+err.message,'error');
+   updateMapSourceTag();fitBounds();
+  }finally{liveBusy=false}
+ }
+ function leaveKakao(){
+  kOn=false;mapEl.classList.remove('kakao-on','kakao-zooming');
+  updateMapSourceTag();fitBounds();connectStatus('보행로 지도만 표시 중이에요. ‘카카오맵 연결’을 누르면 다시 켜져요.');
+ }
+ // 지도를 열 때 자동 연결(사용자가 끈 경우 제외)
+ activateLiveMap=function(){if(!userOff)return activateKakao()};
+ leaveLiveMap=function(){leaveKakao()};
+ for(const [id,fn] of [['live-connect',()=>{if(!window.wpMapDemand){connectStatus('먼저 지도를 열어 주세요. 카카오맵은 지도를 열 때 연결돼요.');return}userOff=false;activateKakao()}],['offline-switch',()=>{userOff=true;leaveKakao()}]]){
+  const old=$(id);if(!old)continue;const btn=old.cloneNode(true);old.replaceWith(btn);btn.addEventListener('click',fn);
+ }
+ window.addEventListener('resize',()=>{if(K()){kmap.relayout();clampKakao(false);scheduleRender()}});
+ connectStatus(location.protocol==='file:'?`카카오맵은 등록된 주소(${KAKAO_HOST})에서 열었을 때만 보여요.`:'지도를 열면 카카오맵을 연결해요.');
+ if(typeof scheduleRender==='function')scheduleRender();
 })();
 </script>
 </body>
